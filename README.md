@@ -10,7 +10,7 @@
 
 | 引擎 | 文件 |
 |---|---|
-| project-os | [tools.html](project-os/tools.html)——Plugin：MCP 19 枚全表（Read/Write、blocked 候選、人審後操作） |
+| project-os | [plugin.html](project-os/plugin.html)——Plugin：MCP 19 枚全表（Read/Write、blocked 候選、人審後操作） |
 | project-os | [cli.html](project-os/cli.html)——CLI：正式／觀測指令按機制分組（由 catalog.py 生成） |
 | project-os | [faq.html](project-os/faq.html)——FAQ 公開版（機械 scrub） |
 
