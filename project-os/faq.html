@@ -1,0 +1,649 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Project OS FAQ（公開版）</title><style>body{margin:0;background:#eef0f2;color:#202326;font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif}main{max-width:860px;margin:32px auto;padding:0 18px}section{background:white;border:1px solid #d8dce0;border-radius:18px;padding:26px}h1{font-size:24px}h2{font-size:19px;border-top:1px solid #e1e4e8;padding-top:18px;margin-top:22px}h3{font-size:16px;margin:16px 0 4px}p{margin:6px 0}pre,code{font:13px/1.6 ui-monospace,SFMono-Regular,monospace;background:#f5f7fa;border-radius:6px}pre{padding:8px 10px;overflow-x:auto}code{padding:1px 5px}footer{font-size:13px;color:#666;margin:20px 0 30px}</style><main><section><h1>Project OS 新手 FAQ（2026-09-25 初版）</h1>
+
+<p>&gt; 本檔是**常設文件**（跟著 repo 迭代），不是一次性產物——所以它落戶在</p>
+<p>&gt; <code>app/</code> 並經 <code>.project-os/config.toml</code> 的 <code>primary_whitelist</code> 申報合法。</p>
+<p>&gt; 這本身就是「如何為常設文件落戶」的示範：不申報的陌生檔案會被</p>
+<p>&gt; reconcile 搬走或隔離，申報了就是基礎設施。</p>
+<p>&gt; 答案體例：**一句話答案** → 解釋 → 命令。</p>
+
+<p>---</p>
+
+<h2>H. 故障與誤操作（救命區，先看這裡）</h2>
+
+<h3>H1 跑指令出現「不是受管專案：找不到 .project-os/config.toml」？</h3>
+<p>**該目錄還沒啟用治理**（或 <code>--project</code> 路徑打錯）。</p>
+<p><code>.project-os/config.toml</code> 存在即受管，這是唯一的判定。</p>
+<pre>```bash</pre>
+<p>project-os init --project /正確/路徑      # 啟用；或檢查路徑有沒有打錯</p>
+<pre>```</pre>
+
+<h3>H2 我的檔案被搬走了！去了哪？</h3>
+<p>**被「整理」了，沒丟**。Primary 開發區之外的產物檔（md/pdf/xlsx…）</p>
+<p>會被搬到 <code>outputs/review/_YYYYMMDD_標題/</code>（日期取檔案 mtime）。</p>
+<pre>```bash</pre>
+<p>project-os reconcile --project .          # 看報告最後印的路徑；報告檔在 .project-os/reports/</p>
+<pre>```</pre>
+<p>不想要某區被動 → 把它申報為 <code>dev_zones</code>（見 C5）。</p>
+
+<h3>H3 檔案進了「隔離區」是什麼？怎麼取回？</h3>
+<p>**inbox 是待處理佇列，不是垃圾桶**——規則認不得的東西放這裡保命，</p>
+<p>永不刪除，且每次 reconcile 按當前政策重新評估（有第二次機會）。</p>
+<pre>```bash</pre>
+<p>project-os inbox list --project .                                    # 看 pending</p>
+<h1>原路徑已變合法 → 重跑 reconcile 自動還原</h1>
+<h1>要搬去新位置 → 人工授權（必填理由，引擎不猜）：</h1>
+<p>project-os inbox enroll &lt;inbox 路徑&gt; --to &lt;新位置&gt; --by &lt;你&gt; --reason &lt;理由&gt; --project .</p>
+<p>project-os reconcile --project .                                     # 執行搬移</p>
+<pre>```</pre>
+<p>**enroll 只對「classifier 已知去處」的物品有效**：授權是為 classifier 的歸位意見蓋章，不是指定新去處。</p>
+<p>原路徑 classifier 認不得（unknown-collection）時，promote 決定**不可</p>
+<p>執行**——報告會標 <code>inbox.decision-inert</code>（決定留痕但不驅動搬移）。</p>
+<p>此類物品的合法出路只有兩條：① 申報集合／dev_zone 使原路徑變合法</p>
+<p>→ 自動還原；② 人手工搬（決定照寫 enroll 留痕）。</p>
+
+<h3>H4 撞名或重複檔案會被覆蓋嗎？</h3>
+<p>**永不覆寫、永不刪檔**。同名異內容 → 後到者加穩定後綴 <code>_1</code>，兩份都留。</p>
+<p>這是寫進產品靈魂的承諾（但注意：這不等於備份）。</p>
+
+<h3>H5 我誤刪了 `.project-os/` 會怎樣？</h3>
+<p>**重新 <code>init</code> 即可復管**（config 會重建、骨架檔「已有不覆寫」不會傷及你的內容）。</p>
+<p>損失的是 reports／quarantine.log 歷史（觀測紀錄，非產品本體）。</p>
+<p>產物歸位規則全在 core 裡，專案內沒有第二套邏輯會消失。</p>
+
+<h3>H6 上傳 401／403？</h3>
+<p>**401＝帳密錯（身分驗證）；403＝授權不足（過了驗證但沒權限）**——</p>
+<p>兩層分開查，這個判讀法對任何 registry 通用：</p>
+<p>- 401：帳密／token 錯，或該用身分拿錯憑證（password 要用該 service</p>
+<p>  **自己的** API key／htpasswd 密碼）。</p>
+<p>- 403：過了驗證但沒權限——帳號沒被掛上該 repo 的上傳角色。</p>
+<p>〔退役備查〕0.13.3 前主通道為 Cloudsmith，其專屬排查（完整 slug、</p>
+<p>Access control 掛角色）隨通道退役；現行 pypiserver 的憑證管理見</p>
+<p>D3（以各倉 release.yml 註釋為準）。</p>
+
+<h3>H7 照抄多行命令出現 `zsh: command not found: #` 或 `refspec does not match any`？</h3>
+<p>**行尾的 <code># 註解</code> 不會被 zsh 剝掉**（zsh 互動模式預設不吃行尾註釋），</p>
+<p><code>#</code> 會變成真的參數傳給程式。食譜裡的註解行是給人看的，貼上時刪掉，</p>
+<p>或先執行 <code>setopt interactivecomments</code>。0.2.1 實戰貨真價實踩過：</p>
+<p><code>git push origin v0.2.1   # 註解</code> 變成三個 refspec 報錯——好在 tag 已被</p>
+<p>前一條 push 順帶推上（見 H8），虛驚一場。</p>
+
+<p>---</p>
+
+<h3>H8 Actions 頁一堆紅 ×，是不是發佈失敗了？</h3>
+<p>**紅 × 是「調試軌跡」，不是「發佈失敗」——兩個頁面講兩個故事**。</p>
+<p>Releases 頁＝產品史（每個版本最終都出貨了，失敗的 run 後來靠修復重跑</p>
+<p>或手動補建收場）；Actions 頁＝工程史（每個紅 × 是一個被修掉的真 bug）。</p>
+<p>讀法：發佈成功率看 Releases（應 100%）；流水線成熟度看綠剔——綠剔</p>
+<p>出現在**最後一次** run 才正常（代表調試收斂，而非運氣）。</p>
+<p>本倉實錄：6 次 run、5 紅 1 綠——前 5 次各卡死一關（測試幾何、token</p>
+<p>兩層權限、shell 語法、GITHUB_TOKEN 寫權限），全修復後 v0.2.1 首次</p>
+<p>零人工端到端。紅 × 是化石層，留著當教材，別刪。</p>
+
+<p>---</p>
+
+<h3>H9 專案改名（目錄更名）怎麼做才不斷資料？（過渡橋＝symlink／符號連結）</h3>
+<p>**改名要由綁定該專案的 agent 從「上層目錄」執行（mv 與建橋同一口氣、</p>
+<p>零空窗）；用戶只負責之後用新路徑開新 session——接線全是 agent 的事。**</p>
+<p>**關鍵字互通**：本條的「建橋」＝ symlink＝符號連結＝<code>ln -s</code> 舊名指向新名，</p>
+<p>搜尋時任一套詞都應命中本條。（2026-10-23 事故：搜尋只用 &quot;symlink&quot; 而</p>
+<p>文件寫「建橋」，加上外層 .gitignore 遮蔽 <code>app/</code>，SOP 在場卻沒被找到，</p>
+<p>遷移漏建橋——兩個檢索陷阱都已在此標記。）</p>
+<p>改名斷的全是「記住舊路徑的外部綁定」（Host session 的 workDir、</p>
+<p>其他工具的專案參照），引擎本身無感：<code>config.toml</code> 不存專案名，</p>
+<p><code>reconcile --project</code> 只吃路徑。</p>
+<p>**常見事故**：用戶在 Finder 手動改資料夾名 → 正在工作的 session 立刻</p>
+<p><code>Workspace path not found</code>。原則：**改名永遠由 agent 執行**——agent 改完</p>
+<p>立刻建橋；用戶手改沒有這一步，正是斷裂成因（2026-10-20 實戰：Zeabur2</p>
+<p>Railway_Dev → Hosting Infrastructure_Dev）。</p>
+<pre>```bash</pre>
+<h1>0. 在專案的「上層目錄」操作（執行者自身 session 才不會失去路徑）</h1>
+<p>cd &lt;專案上層目錄&gt;</p>
+<h1>1. 確認專案內無自引用（有命中先改內容）</h1>
+<p>rg -l &quot;OldName&quot; OldName_Dev/</p>
+<h1>2. 改名＋建橋同一行（先建橋再改名不可行：橋要有新名字才指得過去）</h1>
+<p>mv OldName_Dev NewName_Dev &amp;&amp; ln -s NewName_Dev OldName_Dev</p>
+<h1>3. 機械驗證（綠燈載體：命令自檢）</h1>
+<p>project-os reconcile --project NewName_Dev   # 全綠 = 引擎面完成</p>
+<h1>4. 逐 Host 遷移綁定（清單見下）；全部遷完才拆橋</h1>
+<p>rm OldName_Dev    # 只刪連結不刪資料；刪前確認無活躍 session 仍綁舊路徑</p>
+<pre>```</pre>
+<p>**用戶面指引**：改名期間舊 session 不會斷（橋接住了），之後一律用</p>
+<p>新路徑開新 session——舊路徑是臨時支架。看到 `Workspace path not</p>
+<p>found` 時，用戶只需對任何 agent 說「專案改過名，幫我接回線」，agent</p>
+<p>三步：看 <code>&lt;專案上層&gt;</code> 有無 <code>OldName_Dev -&gt; NewName_Dev</code> 橋 → 無橋</p>
+<p>建橋（先確認新目錄存在）→ 指引用戶新路徑。用戶不需、也不應手動搬</p>
+<p>檔案或改設定。</p>
+<p>逐 Host 檢查：Kimi Work（舊 session workDir 寫舊路徑，橋接住不斷，</p>
+<p>側欄顯示名仍舊；徹底清理需退出 Host 改內部記錄）；Codex／Claude 等</p>
+<p>各 Host 設定檔；dotfiles／密碼管理／其他專案文件（<code>rg</code> 新舊名都掃）。</p>
+<p>警告：symlink 是**有期限的支架**——拖越久，透過舊路徑新產生的綁定</p>
+<p>越多；有些工具會 canonicalize 路徑（真實新路徑寫入設定），無害，</p>
+<p>但拆橋前的掃描要認得新舊兩個名字。</p>
+<p>**與 Q5 的關係**：Q5 否決的是</p>
+<p>「永久 symlink 路標」當常設機制（drift 源）；本橋是**過渡設施**——</p>
+<p>遷完即拆，正是 Q5 認可的「登記後到期清理」變體，兩者不衝突。</p>
+<p>忘記建橋的補救：舊路徑 <code>ln -s</code> 指回新位置即可續命（2026-10-25</p>
+<p>ProjectOS_Dev 實戰驗證），仍須補跑本條第 3 步機械驗證。</p>
+
+<h3>H10 可以在專案內的內層 repo 再跑一次 `project-os init` 嗎？</h3>
+<p>**不可以——一專案一台引擎，治理不巢狀**。內層 repo（primary 裡自帶</p>
+<p><code>.git</code> 的子目錄，如 <code>workspace/Layouts_Norm/</code>）是外層專案的工作</p>
+<p>產物，不是獨立治理對象；在裡面 init 會造出巢狀</p>
+<p><code>.project-os/config.toml</code>，兩台引擎對同一棵樹各自分類搬移，</p>
+<p>「唯一保證來自事後 reconcile」立即失效。</p>
+<p>內層 repo 的保護方式＝在外層 <code>.project-os/config.toml</code> 申報</p>
+<p><code>dev_zones</code>（路徑段名稱比對，一 repo 一名；見 C4）。若內層</p>
+<p>repo 長大要獨立受管，把它**搬出**專案 root、成為獨立專案再</p>
+<p><code>init</code>——巢狀永不合法，沒有豁免通道。</p>
+
+<h2>A. 身份與關係</h2>
+
+<h3>A1 core 和我的 `.project-os/` 是什麼關係？</h3>
+<p>**規則住 core（一份，裝在你主機上）；記憶住專案（每個專案自己的 <code>.project-os/</code>）。**</p>
+<p>core 是無狀態的批次工具，<code>.project-os/</code> 裡只有 config＋歷史紀錄，沒有程式碼。</p>
+<p>升級 core＝所有專案行為一起更新，不需要對各專案推送任何東西。</p>
+
+<h3>A2 把專案搬到別台主機／換電腦會怎樣？</h3>
+<p><code>.project-os/</code> 跟著專案資料夾走（記憶不丟）；新主機裝好 <code>project-os</code></p>
+<p>命令（見安裝章節）即可接手。新主機的 core 版本可以不同——報告會記</p>
+<p><code>core_version</code>，版本差異可診斷。</p>
+
+<h3>A3 「車與工廠」是什麼意思？</h3>
+<p>**車＝registry 裡裝好的成品（pipx 裝的那個）；工廠＝開發倉的源碼。**</p>
+<p>日常使用（reconcile/audit）用車（穩定、與 fleet 同版）；開發改碼才進廠。</p>
+
+<h3>A4 reconcile 會動到我的原始檔案嗎？</h3>
+<p>**會「搬動位置、不會刪內容」**。開發區（dev_zones）內的一切原封不動；</p>
+<p>區外的產物被歸位；規則認不得的進隔離（可救回）。拿不準就先</p>
+<p><code>reconcile --plan</code>（零寫入預覽）。</p>
+
+<h3>A5 Project OS 治理自己時有沒有「開外掛」的機制？</h3>
+<p>**沒有，也不允許有**（owner 2026-11-05 裁：機制均等原則）。</p>
+<p>每個開發 repo 都是**自己產物的工廠**——產物按類型分發到各自的</p>
+<p>管道（web → VPS／Supabase／Vercel；Python 包 → pypiserver；node</p>
+<p>包 → registry；Norm 記錄 → install.sh 落地 ~/.local/share/standards…）。</p>
+<p>ProjectOS_Dev 只是「引擎」這個產物的工廠，是**第一個治理對象</p>
+<p>（dogfooding）**，不是特權物件。</p>
+
+<p>層次切分（owner 2026-11-05 再裁）：</p>
+
+<p>- **規則層＝各專案自由**：每個專案有自己的開發物與特殊規則，</p>
+<p>  這當然合理——ProjectOS_Dev 的 AGENTS.md 比車載模板多出審計尺</p>
+<p>  五問、每切片收尾跑 audit 這類「專案特化規則」，屬此層，允許存在。</p>
+<p>- **機制層＝三重靈魂通用**：「整理師」「防 Scope 爆炸」「防漂移」</p>
+<p>  的對帳機制（reconcile／audit／preflight／紅綠燈／教義鏈…）是</p>
+<p>  **所有受管專案通用的基本標準**，是 Project OS 對受管專案的服務</p>
+<p>  承諾——不許結構性差異。任何機制若在 ProjectOS_Dev 有效、在其</p>
+<p>  他專案結構性失效（如教義鏈曾硬編碼它的檔案路徑），即為產品缺陷，</p>
+<p>  比照 drift 處理。</p>
+
+<h3>A7 每個專案都該有自己的教義嗎？怎麼建？</h3>
+<p>**開發型底座（app／workspace）的專案：是，且 init 已自動建好**——</p>
+<p>教義＝專案自己的憲法（root 閉集、權威鏈等最高結構法則的正本），</p>
+<p><code>config.toml</code> 會有 <code>doctrine_path</code> 指向它。hub／norm 底座的 init</p>
+<p>只提示不自動建：norm 專案的憲法即 Norm 正本家族（<code>STD-POL0</code> 體系</p>
+<p>總則），自動建會雙頭馬車；確有需要再手動跑</p>
+<p><code>project-os doctrine init</code>。非開發型底座（sop／research／campaign／</p>
+<p>course）不建。</p>
+<p>**怎麼改**：正文（修正案索引段以下）不可就地編輯——任何變更走</p>
+<p>修正案（實體包入 <code>inputs/requirements/_YYYYMMDD_主題/</code>＋索引登記</p>
+<p>典範 sha256），audit 的 DOCTRINE_INTEGRITY 會對帳，就地偷改會被</p>
+<p>finding 抓出。教義只管「永遠不能做的」；產品邊界（現階段做／不做</p>
+<p>什麼）是 MVP 宣告，住 <code>governance/</code>，兩者不同層。</p>
+
+<h3>A6 `--by` 的 canonical 署名是什麼？</h3>
+<p>**每個 host 一個字串：<code>&lt;宿主產品名&gt; / &lt;模型&gt;</code>。** 同一 host 一字串，</p>
+<p>actor.multiple finding 才保有真警訊力（實彈：同一台機器 30 天內</p>
+<p>Claude 家族出現 5 種寫法，finding 從警訊退化成噪音）。</p>
+
+<p>| host | canonical | 常見變體（歸一到左） |</p>
+<p>|---|---|---|</p>
+<p>| Claude Code | <code>Claude Code / &lt;模型&gt;</code> | <code>Claude Code Desktop / …</code>、<code>Claude / …</code>、<code>Claude Cowork / …</code>、斜槓前後無空格 |</p>
+<p>| Kimi Work Desktop | <code>Kimi Work Desktop / &lt;模型&gt;</code> | <code>Kimi Work / …</code> |</p>
+<p>| Codex | <code>Codex / &lt;模型&gt;</code> | |</p>
+<p>| Cursor | <code>Cursor / &lt;模型&gt;</code> | |</p>
+<p>| Gemini | <code>Gemini / &lt;模型&gt;</code> | |</p>
+<p>| Trae | <code>Trae / &lt;模型&gt;</code> | |</p>
+<p>| Antigravity | <code>Antigravity / &lt;模型&gt;</code> | |</p>
+
+<p>reconcile 對已知變體會在 finding 裡附**歸一建議**（自報≠驗證：</p>
+<p>只建議、不強改）。新 host 進表＝FAQ 改版（車載文件隨 wheel 發行）。</p>
+
+<p>---</p>
+
+<h2>B. 安裝與環境</h2>
+
+<h3>B1 pipx 是什麼？為什麼不用 pip？</h3>
+<p>**pipx＝每個 CLI 工具一間獨立隔離套房**（專用 venv），套件間不相汙染、</p>
+<p>解除安裝乾淨。pip 裝進系統 Python 大家擠一間，容易撞依賴。</p>
+
+<h3>B2 Python 要哪個版本？</h3>
+<p>**3.11 或更高**（這是硬性要求，安裝腳本會先檢查）。macOS 用 Homebrew</p>
+<p>或 python.org 裝新版即可。</p>
+
+<h3>B3 裝完打 `project-os` 說 command not found？</h3>
+<p>**PATH 還沒生效**。重開 terminal，或：</p>
+<pre>```bash</pre>
+<p>python3 -m pipx ensurepath &amp;&amp; exec $SHELL -l</p>
+<pre>```</pre>
+
+<h3>B4 `~/.local/bin/project-os` 就是全部程式嗎？</h3>
+<p>那是**發動機鑰匙孔**（symlink）；真正的程式在 pipx 的 venv 裡</p>
+<p>（<code>~/Library/Application Support/pipx/venvs/project-os/</code>）。</p>
+
+<p>---</p>
+
+<h2>C. 啟用與日常治理</h2>
+
+<h3>C1 怎樣算「受管」？</h3>
+<p>**<code>.project-os/config.toml</code> 存在即受管。** 沒有它，project-os 對該目錄</p>
+<p>一律不動（fail-fast 提醒，不會誤傷）。</p>
+
+<h3>C2 既有專案（已有一堆檔案）接上來會發生什麼？</h3>
+<p>**首跑先預覽，看清楚了再真跑**：</p>
+<pre>```bash</pre>
+<p>project-os init --project /path/to/既有專案</p>
+<p>project-os reconcile --project /path/to/既有專案 --plan   # 只看預計動作，零寫入</p>
+<p>project-os reconcile --project /path/to/既有專案          # 確認無誤後真跑</p>
+<pre>```</pre>
+<p>外來倉首納管也可在 config.toml 設 <code>first_intake = true</code>（只報告不動手，</p>
+<p>人審後改回 false）。**2026-10-15 Q1 補**：非空 root 的 <code>init</code> 會</p>
+<p>**自動開** first_intake 並列出既有內容；人審通過後用</p>
+<p><code>project-os intake done --by &lt;你&gt;</code> 機制化關閉（不須手編 config）。</p>
+<p>首次納管的完整標準作業見車載 **PLAYBOOK.md**（<code>project-os docs</code> 可讀）。</p>
+
+<h3>C3 檔案命名有什麼規矩？</h3>
+<p>產物要**日期包裹**：<code>outputs/review/_20260925_標題/</code>（底線開頭、8 位日期、</p>
+<p>1–80 字標題）。散置的產物檔 reconcile 會自動包裹歸位，日期取 mtime。</p>
+
+<h3>C4 root 層能自己開新目錄嗎？</h3>
+<p>**預設不行——root 是閉集**（<code>.project-os/</code>、AGENTS.md、inputs/、outputs/、</p>
+<p><code>.artifacts/</code>、primary、governance/、handoff/ 八項）。要開工具目錄（如</p>
+<p><code>bin/</code>、<code>.github/</code>）先在 config.toml 申報：</p>
+<pre>```toml</pre>
+<p>dev_zones = [&quot;bin&quot;, &quot;.github&quot;]     # 聯集語義：在預設上追加，不影響其他鍵</p>
+<pre>```</pre>
+<p><code>dev_zones</code> 是**路徑段比對**：裸名 <code>research</code> 同時保護 root 層與 Primary</p>
+<p>內任何層的 <code>research/</code>；不支援含 <code>/</code> 的寫法（safe-segment 驗證拒絕）。</p>
+
+<p>**root 單一「檔案」要申報**（2026-10-15 Q5 補）：</p>
+<pre>```toml</pre>
+<p>primary_whitelist = [&quot;CLAUDE.md&quot;]   # root 層精確檔名豁免（root.whitelist LEAVE）</p>
+<pre>```</pre>
+<p>**Host 指示檔**（<code>CLAUDE.md</code>／<code>GEMINI.md</code> 等各 Host 的專案級指示檔）</p>
+<p>的受認可申報方式就是 <code>primary_whitelist</code>——八項閉集外的單檔例外，走</p>
+<p>白名單、**不走日期包裹**。不申報的指示檔會被當「區外產物」歸位</p>
+<p>（內容不丟，但不再是指示檔該在的位置）。</p>
+
+<p>**車載文件自動認定**（2026-10-16 起）：隨 wheel 發行的文件</p>
+<p>（<code>project-os docs</code> 列出的檔名：FAQ／GLOSSARY／PLAYBOOK／AGENTS 模板）</p>
+<p>在 Primary 根層視為**公認基礎設施**，不須申報——既有專案升級引擎後，</p>
+<p>新出現的車載文件不會再被首輪 reconcile 歸位（0.8.0 PLAYBOOK.md</p>
+<p>實彈修復）；<code>primary_whitelist</code> 申報降為額外豁免的補充手段</p>
+<p>。</p>
+
+<h3>C5 AGENTS.md 是什麼？我要寫什麼？</h3>
+<p>**給 AI 助手看的「家規」入口**（init 自動生成模板）。檢查你有沒有要補的：</p>
+<p>開發區清單、inbox 紀律、skill 產物放 <code>.artifacts/skills/</code> 等。已有不覆寫。</p>
+
+<h3>C6 一個專案可以有幾個 Primary？混合內容／多 app 怎麼放？</h3>
+<p>**恰好一個**。八型（<code>app</code>/<code>sop</code>/<code>research</code>/<code>campaign</code>/<code>course</code>/<code>workspace</code>/</p>
+<p><code>hub</code>/<code>norm</code>）是底座契約閉集，</p>
+<p><code>init</code> 擇一（config <code>primary =</code> 單值，</p>
+<p>load_policy 閉集驗證）；多 Primary 不立案。</p>
+<p>**型名宣告的是「底座契約」——這個 Primary 用哪套骨架＋開發區規則——</p>
+<p>不是內容普查**。像餐館執照登記「中餐館」：宣告的是適用哪套規範，</p>
+<p>不承諾菜單上每一道都是中餐。所以 <code>research/</code> 專案裡有個 <code>app/</code></p>
+<p>子目錄完全不矛盾。</p>
+<p>- 混合內容 → Primary 內部自由擺（如 <code>research/app/</code>）；不同子樹要不同</p>
+<p>  規則就用巢狀 AGENTS.md（業界慣例；Primary 內部本來框架自治）。</p>
+<p>- 多 app（monorepo）→ Primary 內部 <code>apps/</code> + <code>packages/</code>；repo 根就是</p>
+<p>  Primary，turbo / nx / pnpm workspaces 對 repo 根的要求在這裡全部滿足。</p>
+<p>- 一 Primary 可掛多 provider（<code>providers = [&quot;x&quot;, &quot;y&quot;]</code>，Slice 7a 已定案）。</p>
+<p>語義權威：<code>inputs/requirements/_20260917_primary-bases-and-provider-adapters/</code>。</p>
+
+<h3>C7 root 的八項與收集器字典</h3>
+<p>**定義正本在此（各專案通用，不隨底座變）**——治理面收集器存在的</p>
+<p>意義就是存放開發中的一切；**primary 只放成品本身**。</p>
+
+<p>| 項 | 定義 | 誰寫入 |</p>
+<p>|---|---|---|</p>
+<p>| <code>.project-os/</code> | 引擎控制面：config、findings、報告（只放宣告與觀測，不放部件本體） | 引擎自產 |</p>
+<p>| <code>AGENTS.md</code> | 自覺層入口指令（本檔的血統來源） | init 生成；兩層 repo 皆可編輯 |</p>
+<p>| <code>inputs/</code> | **素材收集器**——開發過程中進來的東西（四集合見下） | 人與 agent |</p>
+<p>| <code>outputs/</code> | **產物收集器**——本專案產出的東西（日期包歸位） | agent 產物＋引擎包裹 |</p>
+<p>| <code>.artifacts/</code> | 運行區：skill 產物、inbox 隔離佇列 | 引擎與 skill |</p>
+<p>| <code>&lt;primary&gt;/</code> | **成品的家**——只放成品本身（含成品在各生命週期的態，如草稿） | 各底座契約定義其內部結構 |</p>
+<p>| <code>governance/</code> | 採納規則（schedules.toml／core.md） | 引擎骨架＋人 |</p>
+<p>| <code>handoff/</code> | 跨 session 接力狀態 | agent |</p>
+
+<p>**<code>inputs/</code> 四集合**（分工與實例）：</p>
+
+<p>- <code>requirements/</code>＝本專案**自造規格與機制的立案稿**（變更前送裁）。</p>
+<p>  ⚠️ 同名解歧：這是「本專案自己的立法處」，**不是**引擎的需求</p>
+<p>  文件——引擎需求文件住工廠，受管專案的 agent 不讀（rule 10）。</p>
+<p>- <code>sources/</code>＝外部原始素材（設計總結、收到的規格書……）</p>
+<p>- <code>references/</code>＝外部參照與討論紀錄（調研、比較、會議記要）</p>
+<p>- <code>feedback/</code>＝回饋（試用回報、審查意見）</p>
+
+<p>**<code>outputs/</code> 階段**：<code>review/</code>＝AI 產物歸位（日期包、append-only，</p>
+<p>日期取 mtime）；<code>published/</code>＝對外發佈的成品。</p>
+
+<p>**邊界句**：開發過程中的**非成品文件**（判例表、討論稿、工作筆記、</p>
+<p>驗收基材）一律進收集器（<code>inputs/</code> 或 <code>outputs/</code> 日期包）；primary</p>
+<p>只放成品本身（含其組成部分，如 app 底座的測試、norm 底座記錄內的</p>
+<p>示範檔）。區分口訣：「**這是不是成品本身？**」是→primary；否→收集器。</p>
+
+
+<h3>C8 維護窗口（pause）是什麼？</h3>
+<p>**暫停 reconcile 的「執行面」**——期間 reconcile 照跑、照寫報告</p>
+<p>（觀測不停），但只報告不搬移；給「一段時間內整棵樹重組」（如分拆</p>
+<p>前整備）用。**暫停是手術，申報是常態**：長期結構走 dev_zone 申報，</p>
+<p>別反覆暫停。</p>
+<pre>```bash</pre>
+<p>project-os pause --project &lt;路徑&gt; --hours 24   # 開窗口（1–168h，預設 24，到期自動恢復）</p>
+<p>project-os resume --project &lt;路徑&gt;             # 提前結束</p>
+<pre>```</pre>
+<p>**只能由使用者親手執行**——agent 只能建議你暫停，不得自翻</p>
+<p>。窗口結束後的第一輪 reconcile</p>
+<p>會把這段時間累積的待整理項一次攤開——免費的整備前後對照。</p>
+
+<h3>C9 scope.absent 一直提醒——持續營運專案一定要建 scope.toml 嗎？</h3>
+<p>不一定。<code>scope.absent</code> 是「缺產品 MVP 邊界宣告」的觀測提醒</p>
+<p>（drift 類、report-only）；若本專案為**持續營運**（無單一產品</p>
+<p>MVP，Session 級交代走 handoff 三件式），owner 可於</p>
+<p><code>.project-os/config.toml</code> 親手宣告：</p>
+
+<pre>```toml</pre>
+<p>scope_mode = &quot;off&quot;</p>
+<pre>```</pre>
+
+<p>- **人裁，引擎不代判**：引擎不偵測專案型態（無後綴／名稱匹配）——</p>
+<p>  finding 一律只附建議文案，判斷永遠在人；宣告進 git，可審、</p>
+<p>  可回滾（刪鍵即恢復提醒）。</p>
+<p>- **只關 absent 的 scope 面**：教義面（doctrine.absent／</p>
+<p>  doctrine.coverage）不受影響；值域僅 <code>&quot;on&quot;|&quot;off&quot;</code>，未知值</p>
+<p>  fail-closed。</p>
+<p>- **矛盾提醒**：宣告 off 但 <code>governance/scope.toml</code> 仍存在（如有限</p>
+<p>  專項 stage）→ <code>scope.mode-conflict</code>（report-only）請二選一人裁：</p>
+<p>  移除宣告，或維持 stage——stage 的 form／review-due／boundary</p>
+<p>  對帳不受宣告影響。停用期間 reconcile summary 記</p>
+<p>  <code>&quot;scope_absent&quot;: &quot;disabled-by-declaration&quot;</code> 一筆（觀測不消音）。</p>
+
+<p>---</p>
+<p>---</p>
+
+<h2>D. 發佈與分發</h2>
+
+<h3>D1 打 tag 就會自動發佈嗎？</h3>
+<p>**「push tag 到 GitHub」才點火**，只打本地 tag 不會動。之後全自動：</p>
+<p>測試門禁（不過全停）→ 建 wheel → 傳 registry → 掛 GitHub Releases。</p>
+<p>（0.16.0 起只建 wheel 不再建 sdist——sdist 不收建置工序產物，</p>
+<p>wheel-from-sdist 會掉車載文件，實彈後比照 macgov 改 wheel-only。）</p>
+<p>你永遠要親自決定的只有三件事：何時發、什麼版本號、tag 訊息寫什麼。</p>
+
+<h3>D2 成品放哪裡給人領？</h3>
+<p>**兩個通道同時發**：自架 pypiserver 的 <code>internal/</code> 組（主通道；CI 經</p>
+<p>發佈入口 <code>pypi-publish.hojackywork.com</code> 寫入，DEV-PTC1@5.0.0 Q2 起</p>
+<p>改發 internal/）＋ GitHub Releases（兜底，registry 出事時的備援）。</p>
+<p>使用者從 <code>pypi-internal.hojackywork.com</code> 領，開發者從 pypi.</p>
+<p>hojackywork.com 領（唯讀掛載 internal/）。0.17.1 前發在 <code>dev/</code> 組。</p>
+<p>裝車一律走 registry，指令形狀見 F1。</p>
+<p>〔退役備查〕0.13.2 前主通道曾為 Cloudsmith，備份於 0.13.3 退役——</p>
+<p>legacy 機制的發鑰／撤權條目（E1/E2）留墓碑，不再適用。</p>
+
+<h3>D3 `project-os release init` 裝配完就能發了嗎？</h3>
+<p>**workflow 檔好了，還差平台層兩件事**：該 repo 推上 GitHub，並貼上</p>
+<p>發佈 secrets（現行上傳憑證＝<code>PYPI_PUBLISH_PASSWORD</code>，發佈入口</p>
+<p>pypi-publish 寫入 internal/；舊 <code>PYPISERVER_PASSWORD</code>（dev/）已退役；**確切變數名以各倉 <code>release.yml</code> 的註釋為準**——文件</p>
+<p>不追代碼細節，正本在 workflow 檔）。之後打 v* tag 即全自動。</p>
+<p>〔退役備查〕0.13.3 前為 Cloudsmith 三件套（<code>CLOUDSMITH_TOKEN</code></p>
+<p>secret；<code>CLOUDSMITH_REPO</code>／<code>CLOUDSMITH_USER</code> variables），隨備份</p>
+<p>通道退役。</p>
+
+<h3>D4 中央模板在哪？新 repo 會自動套用嗎？</h3>
+<p>模板住在 <code>hojackywork/ProjectOS_Dev</code> 倉的 <code>.github/workflows/release.yml</code></p>
+<p>（GitHub reusable workflow 機制，必須寄存在某 repo）。**不會全自動套用**——</p>
+<p>各倉要有一個 8 行呼叫檔，三個入口：<code>release init</code> 命令／建倉模板／手動貼。</p>
+<p>模板改進在中央，全倉自動生效（要同步的只有「存在」，不是「內容」）。</p>
+
+<h3>D5 `status --json` 是什麼？</h3>
+<p><code>project-os status --json</code> 把部署狀態總覽變成**機器可讀 JSON**</p>
+<p>（<code>schema_version</code>＋<code>tool</code>／<code>deployment</code>／<code>hosts</code>／<code>findings</code> 四組，</p>
+<p>欄位比照 macgov 的 <code>status --json</code>）。<code>findings</code> 是觀測訊號：</p>
+<p><code>plugin.stale</code>（Host plugin 版號落後引擎）／<code>plugin.not_detected</code>／</p>
+<p><code>connector.duplicate</code>（獨立 mcpServers 與 plugin 內建 connector</p>
+<p>並存＝工具兩套）／<code>version.query_failed</code>——**只回報、不自動處置**</p>
+<p>，每條自帶 <code>fix_hint</code> 處置提示；最新版查不到時 <code>latest_version</code></p>
+<p>是 <code>null</code>、其他欄位照常。給 Agent 與儀表消費用；人類讀者維持</p>
+<p><code>project-os status</code> 文字輸出。</p>
+
+<p>---</p>
+
+<h2>E. 權限與安全</h2>
+
+<h3>E1 entitlement token 怎麼發、怎麼命名？</h3>
+<p>**〔退役 0.13.3〕本條為 Cloudsmith 時代的機制，隨備份通道退役，僅留</p>
+<p>歷史參考**。現行主通道＝自架 pypiserver（見 D2/F1），無 entitlement</p>
+<p>token 概念；若未來重新需要按機器發鑰，另案立案。</p>
+
+<h3>E2 同事離職／電腦遺失怎麼撤權？</h3>
+<p>**〔退役 0.13.3〕同上，Cloudsmith 機制隨備份通道退役**。現行</p>
+<p>pypiserver 的存取控制見機器級憑證規約（各專案 AGENTS.md 第 12 條</p>
+<p>的正本 <code>~/.config/machine-access-convention.md</code>）。</p>
+
+<h3>E3 secrets 貼哪裡？Environment 和 Repository 差別？</h3>
+<p>貼在 repo → Settings → Secrets and variables → Actions。</p>
+<p>**Repository 級＝全倉 workflow 通用**（我們現在）；Environment 級＝綁定</p>
+<p>環境＋可設「人工批准」閘門（未來多人協作時把發佈 token 移進去）。</p>
+
+<p>---</p>
+
+<h2>F. 版本與升級</h2>
+
+<h3>F1 官方發新版後，我的專案要改什麼？</h3>
+<p>**專案什麼都不改；要改的只有「車怎麼升」。** registry 模式裝的車</p>
+<p>（自架 pypiserver；0.13.2 前為 Cloudsmith，見 D2 退役備查），升級</p>
+<p>用**帶版本號**的安裝指令（install.sh 或等價 pipx 直令）：</p>
+<pre>```bash</pre>
+<p>PROJECT_OS_INDEX_URL=&#x27;&lt;token URL&gt;&#x27; sh bin/install.sh 0.4.0</p>
+<h1>等價：pipx install --force --index-url &#x27;&lt;token URL&gt;&#x27; \</h1>
+<h1>  --pip-args &quot;--extra-index-url https://pypi.org/simple&quot; project-os==0.4.0</h1>
+<pre>```</pre>
+<p>**勿裸跑 <code>pipx upgrade project-os</code>**——0.4.0 實彈：它只認私有倉為</p>
+<p>索引、解析不到 PyPI 上的依賴（mcp），會回報「已是最新」並停在舊版</p>
+<p>（silent no-op）。升級後對每個受管專案重跑一次 <code>reconcile</code>——</p>
+<p>政策即時生效、隔離區按新政策重估；config.toml 聯集語義，永不過期。</p>
+
+<h3>F2 為什麼版本號要三處一致？</h3>
+<p>**tag ↔ pyproject ↔ registry 同號是機器強制的**（A2 測試鎖住）——漏一邊</p>
+<p>測試即紅。這是 Logto「missed version bump」事故給全行業的教訓。</p>
+
+<p>---</p>
+
+<h2>G. 多機多 Agent</h2>
+
+<h3>G1 兩台 AI Desktop 同時開著會搶著搬檔案嗎？</h3>
+<p>**排程只綁一台**（S1 教義）：每個受管專案只由一台 Desktop 跑定時 reconcile，</p>
+<p>其他機器一律手動跑。手動 reconcile 任何時刻跑都安全（冪等、永不刪檔），</p>
+<p>只是不要各自建 cron。</p>
+
+<h3>G2 `watch` 常駐行程是必須的嗎？它是每 3 秒跑一次 reconcile 嗎？</h3>
+<p>**不是必須，也不是每 3 秒跑 reconcile**。watch 是「輪詢快照比對」的</p>
+<p>獨立行程：每 <code>--interval</code> 秒（預設 3）把全樹拍成</p>
+<p><code>{路徑: (mtime, size, 是否目錄)}</code> 快照，兩張完全相同 → 什麼都不做</p>
+<p>（乾淨的樹零成本，連報告都不產生）；**有差異才代跑一次 reconcile**。</p>
+<p>用輪詢而不用作業系統事件通知（FSEvents），是「host 不可信」公理——</p>
+<p>跨平台唯一保證的公共底層是檔案系統本身。它掛了、沒開都不影響承諾：</p>
+<p>任何時刻手動跑一次 <code>reconcile</code> 即全部合規。</p>
+
+<h3>G3 「給專案排個 reconcile」是什麼意思？reconcile 本身就是排程嗎？</h3>
+<p>**不是。reconcile 是動作（歸位），排程是觸發器（鬧鐘），兩層分開**。</p>
+<p>project-os 是無常駐 CLI，自己不設鬧鐘；「排程」＝某台 Desktop 的定時任務</p>
+<p>到點**呼叫** <code>project-os reconcile --project …</code>。日常說「排個 reconcile」</p>
+<p>是省略句，全句是「排一個會自動執行 reconcile 的定時任務」。S1 教義</p>
+<p>「每專案只綁一台 Desktop」管的是觸發器歸屬（誰有權設鬧鐘），不是</p>
+<p>reconcile 本身。觸發三層：watch（輪詢代跑）／host 定時任務（到點代跑）／</p>
+<p>手動 reconcile（最終保證）。</p>
+
+<h3>G4 外部 AI agent 要讀 Project OS 2 的治理知識，該讀哪裡？</h3>
+<p>**正式介面＝MCP／車載文件；過橋才釘 release tag；永勿直讀 main。**</p>
+<p>repo 的 main 是工廠開發中狀態（無版本釘子、隨時漂移），不是知識介面。</p>
+<p>正式介面（2026-10-12 裁決落地）：<code>project-os mcp</code>（read-only 工具閉集，</p>
+<p>含 <code>docs</code> tool）與 <code>project-os docs</code>（FAQ／GLOSSARY／AGENTS 模板隨 wheel</p>
+<p>發行，有版本釘子）——安裝版升級後即隨車可用。升級前的人為過橋：</p>
+<p>釘 release tag 讀（如 <code>…/v0.3.0/FAQ.md</code>，版本號隨當前 release）。</p>
+<p>人類讀者維持讀工廠／GitHub 頁不變。</p>
+
+<h3>G5 讓 AI Host（Kimi／Claude／Codex…）用上 project-os 的 MCP，怎麼接？</h3>
+<p>**兩層：裝車（全機一次）＋接 host（每台一行設定，或一句 mcp install）。**</p>
+<p>裝車見 F1；之後 <code>pipx upgrade</code> 升級對**全部已接 host 自動生效**</p>
+<p>（設定只存穩定路徑、工具每次動態發現——升級永遠不用重接；</p>
+<p>升級前開著的長 session 重開即愈）。</p>
+
+<p>接 host 正典五台（條目共通形狀：<code>command</code>＝車版路徑</p>
+<p><code>~/.local/bin/project-os</code>，<code>args</code>＝<code>[&quot;mcp&quot;]</code>）：</p>
+
+<p>| Host | 設定檔（寫入處） | 通道 |</p>
+<p>|---|---|---|</p>
+<p>| Codex（ChatGPT Desktop） | <code>~/.codex/config.toml</code> → <code>[mcp_servers.project-os]</code> | 手改／mcp install |</p>
+<p>| Claude Desktop | <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> → <code>mcpServers</code> | 手改／mcp install |</p>
+<p>| Claude Code CLI | <code>~/.claude.json</code> → <code>mcpServers</code>（多 <code>&quot;type&quot;: &quot;stdio&quot;</code>） | <code>claude mcp add</code>／mcp install |</p>
+<p>| Kimi Code（CLI＋Desktop） | <code>~/.kimi-code/mcp.json</code> → <code>mcpServers</code> | 插件頁「安裝自定義插件」／mcp install |</p>
+<p>| Kimi Desktop（chat） | <code>daimon-share/plugin-sources/personal/project-os/</code>（**插件包**，掃描式個人倉） | 插件頁「自定義插件」／<code>/plugin builder</code> |</p>
+
+<p>**kimi-desktop 勿直改 daimon <code>plugins/installed.json</code>**——chat 面板</p>
+<p>看不見、官方 CLI 拒重複 id（2026-10-14 實彈教訓）。</p>
+<p>**一鍵指令**：</p>
+<p><code>project-os mcp install</code>（偵測到的 host 冪等接入；<code>--host &lt;id&gt;</code> 單台、</p>
+<p><code>--force</code> 覆寫衝突）／<code>project-os mcp list</code>（查看各 host 接入狀態）／</p>
+<p><code>project-os mcp uninstall</code>（移除本工具條目，foreign 拒動）。</p>
+<p>HOSTS 閉集五成員（codex／claude-desktop／claude-code／kimi-code／</p>
+<p>kimi-desktop）在 code 即 spec——加 host＝考證一個、註冊一個、補測試。</p>
+<p>**驗收**：GUI host 重開後在設定裡看得到（且四工具 status／</p>
+<p>drift_findings／declarations／docs 可呼叫）；CLI host 用自帶命令</p>
+<p>讀取（如 <code>claude mcp list</code>）。</p>
+
+<p>**車載 skill**：</p>
+<p><code>project-os skills install</code> 把 SKILL_NAMES 閉集內的車載 skill（</p>
+<p><code>project-os-govern</code>）**真檔案只寫進中央權威路徑</p>
+<p><code>~/.agents/skills/&lt;名稱&gt;/</code>**（MacGovernance 中央 Skill 部署位置，</p>
+<p>與 Skills_Hub install.sh 同址協作）；讀自家私有路徑的 host</p>
+<p>（Kimi Work daimon 目錄、Claude Code <code>~/.claude/skills</code>）由安裝器建</p>
+<p>**symlink → 中央**——host 目錄零複本，禁止複製到 host 專屬位置。</p>
+<p>**Claude Desktop 聊天版**（Q8/Q10）實測結論：正規通道＝官方</p>
+<p>「外掛程式 → 新增 → **上傳外掛程式**」——<code>.plugin</code> 包**自包含**</p>
+<p>skills/＋MCP 連接器（.mcp.json），一包到位（2026-10-30 實測：</p>
+<p>Skills·1／連接器·1）。<code>skills install</code> 自動從中央封裝</p>
+<p><code>~/.local/share/project-os/plugin/dist/project-os.plugin</code>（DEV-PTC1</p>
+<p>3.0.0 §8 標準位），指引直指</p>
+<p>該檔；上傳仍為人審動作（官方機制）。注意關掉先前手動接的</p>
+<p>project-os MCP toggle 避免雙重註冊。</p>
+<p>冪等（相同跳過、conflict 只報告不覆寫、<code>--force</code> 更新）、舊式真目錄</p>
+<p>複本自動遷移為 symlink、<code>uninstall</code> foreign 拒動。安裝屬授權面：</p>
+<p>**永不進 MCP**（read-only 閉集，工具面以 policy.MCP_TOOLS 為準）。</p>
+<p>skill 正本歸</p>
+<p>Skills_Hub <code>catalog/</code>（個人層唯一正本）；要不要裝在本機由使用者決定。</p>
+
+<p>**部署精靈的寫入閘門**：<code>project-os deploy</code>／<code>undeploy</code> 寫入前會先印</p>
+<p>將執行的清單——互動環境問 [y/N]；**非互動（腳本／Agent）必須加</p>
+<p><code>--yes</code>**（過渡版未給只警告照跑、次版將拒動）。預覽用 <code>--plan</code></p>
+<p>（只列不寫）；選裝用 <code>--only &lt;host id&gt;</code>（可重複，只認各通道閉集）。</p>
+
+<h3>G6 雙層 git：工作區根的 repo 跟 GitHub 是什麼關係？</h3>
+<p>**外層（工作區根的 <code>.git</code>）純本地、無 remote、永不進 GitHub；進 GitHub</p>
+<p>的只有 Primary（<code>app/</code>）的內層 repo。** 兩層分工：外層＝治理面版本化</p>
+<p>（教義／需求／governance／handoff／控制面的歷史）；內層＝產品本體</p>
+<p>（發佈通道，tag 觸發 release）。</p>
+<p>- **既有專案納管**：<code>project-os git-doctor --plan</code> 先預覽，fix 一次性</p>
+<p>  遷移——含 <code>.git/</code> 移入 <code>app/</code>（remote 存 .git/config 跟著走、歷史</p>
+<p>  不斷、可回滾；教義 §7 唯一合法路徑）。</p>
+<p>- **外層 <code>.gitignore</code> 排除 <code>app/</code>＋<code>.artifacts/</code>**——兩層互不追蹤，</p>
+<p>  外層結構上追不到內層。</p>
+<p>- **git／gh 操作一律在 <code>app/</code> 內執行**：站在工作區根跑 gh 會解析到</p>
+<p>  外層無-remote repo——fail-closed（報錯，不會誤推），但惱人；</p>
+<p>  這是紀律點，不是缺陷。</p>
+<p>- **外層檔案（AGENTS.md／governance／handoff）的內容 Agent 可直接</p>
+<p>  編輯**；分層管的是 commit 動線，不是編輯權限（過時就更新並聲明；</p>
+<p>  2026-10-16 釐清）。</p>
+
+<p>---</p>
+
+<h2>附錄：第一天路線（30 分鐘實作課）</h2>
+
+<p>照順序做完，你就用過了 FAQ 裡八成的主題。</p>
+
+<pre>```bash</pre>
+<h1>① 裝車（5 分鐘）——index URL 以 F1／當前 README 為準（自架 pypiserver）：</h1>
+<p>PROJECT_OS_INDEX_URL=&#x27;&lt;當前 registry index URL，見 F1&gt;&#x27; \</p>
+<p>  sh bin/install.sh 0.2.0</p>
+<p>project-os --version          # 應顯示 0.2.0</p>
+
+<h1>② 啟用一個 toy 專案（5 分鐘）：</h1>
+<p>mkdir -p /tmp/toy &amp;&amp; cd /tmp/toy &amp;&amp; git init -q .</p>
+<p>project-os init --project .</p>
+<p>ls                            # 看骨架：.project-os/ inputs/ outputs/ .artifacts/ governance/ handoff/ AGENTS.md</p>
+
+<h1>③ 故意製造混亂，看它整理（10 分鐘）：</h1>
+<p>echo &quot;實驗筆記&quot; &gt; 散置筆記.md</p>
+<p>project-os reconcile --project . --plan     # ①先預覽：預計搬去哪——零寫入</p>
+<p>project-os reconcile --project .            # ②真跑：檔案被搬到 outputs/review/_YYYYMMDD_…/</p>
+<p>echo &quot;怪東西&quot; &gt; 未申報.xyz                   # 規則認不得的副檔名</p>
+<p>project-os reconcile --project .</p>
+<p>project-os inbox list --project .           # 它進了隔離區——不是垃圾桶</p>
+<h1>③還原：原路徑合法化（申報）或人工授權：</h1>
+<p>echo &#x27;dev_zones = [&quot;bin&quot;]&#x27; &gt;&gt; .project-os/config.toml   # 例子：申報新開發區</p>
+<p>project-os inbox enroll 未申報.xyz --to inputs/feedback --by 你的名字 --reason 實驗 --project .</p>
+<p>project-os reconcile --project .</p>
+
+<h1>④ 收尾（5 分鐘）：</h1>
+<p>cat .project-os/reports/$(ls -t .project-os/reports/ | head -1)   # 看報告：記了 core_version</p>
+<h1>清理：rm -rf /tmp/toy（玩具課不留痕）</h1>
+<pre>```</pre>
+
+<p>完成標誌：你能回答「我的檔案被搬到哪」「隔離區怎麼取回」「root 怎樣申報新目錄」——</p>
+<p>這三題會了，日常治理就難不倒你。</p>
+<h3>G7 跨 session 交接（handoff）的標準做法是什麼？（2026-11-16 標準化）</h3>
+<p>**三件式：文檔＋prompt＋ticket。**</p>
+<p>- **文檔**：狀態與事實住 <code>handoff/</code>（current.md 等）；請求類必附 prompt</p>
+<p>  備份段（備份先寫、照備份逐字貼、貼後凍結，備份帶交付註記）。</p>
+<p>- **prompt（路由信）**：需路由者（**請求類或跨專案通報**）必須在對話</p>
+<p>  交付給 owner，由 owner 親手轉貼——**agent 不自行發送**；同專案沉底</p>
+<p>  通報免 prompt。三要件：發起方自報身份／要求接手方自報 Host＋Model</p>
+<p>  （治理命令帶 <code>--by</code>）／引用文檔全給絕對路徑；標明歸屬（session 或</p>
+<p>  專案兩粒度）、逐項分開（同專案合併須先經 owner 確認並留痕）。</p>
+<p>- **先分流（2026-11-17 裁）**：機械維護（finding 自帶處置路徑）不發</p>
+<p>  prompt、不開票——finding 自然發現即通知；裁決類請求才走全制；</p>
+<p>  批量機械通報走「人審代遞」（另案）。</p>
+<p>- **對話形狀（禁兩極端）**：對話必須同時含重點正文＋絕對路徑可點</p>
+<p>  連結；只丟連結或只講話不留連結皆禁止。</p>
+<p>- **ticket（接力票）**：**票＝編號**——裁決類事項在 handoff 段帶</p>
+<p>  <code>HO-TKT-YYYYMMDD-HHMM</code> 即可；<code>handoff/tickets.jsonl</code>（append-only、</p>
+<p>  五欄）是機器掛點，人不主動維護。**關照無儀式**：機器可驗事項</p>
+<p>  （finding 消失／commit 落地）對帳自查自關、零回執；機器不可驗者</p>
+<p>  一句話回執即可。機械維護與純通報不開票。</p>
+<p>- 詞表見 GLOSSARY「Handoff 層」；立案與裁決紀錄：ProjectOS_Dev</p>
+<p>  <code>inputs/requirements/_20261116_handoff標準化/</code>。</p>
+
+<h3>G8 發版後要通報嗎？（2026-11-16，0.17.4 斷記實彈）</h3>
+<p>**要。發版＝需路由事件**——其他專案的 session 靠車版內容決定行為，</p>
+<p>版號不會自己長腳。</p>
+<p>- **沉底通報 must**：發版完成後在 <code>handoff/current.md</code> 記一筆（版號＋</p>
+<p>  內容一句＋驗證證據）。實彈：0.17.4 發版未記 handoff，下一個 session</p>
+<p>  拿舊版號誤判現況。</p>
+<p>- **有專案等此版落地 → 請求類**：對話交付 prompt＋開票（標準見 G7）。</p>
+<p>- **版號權威＝機器可查處**（<code>git tag</code>／pyproject）；handoff 記錄是通報，</p>
+<p>  不是版號權威——陳述版號前必先查，不靠記憶（含 AI）。</p>
+
+
+<h3>G9 多引擎寄居與教義對帳怎麼落地？（2026-11-16）</h3>
+<p>- **引擎狀態目錄**：一律寄居 <code>.project-os/engines/&lt;engine-id&gt;/</code></p>
+<p>  （root 閉集不加頂；登記制——<code>ls</code> 即登記現況，未登記 id 被</p>
+<p>  <code>engines.unregistered</code> finding 點名）。各引擎 findings／reports</p>
+<p>  寫自家 <code>engines/&lt;id&gt;/reports/</code>；房東引擎對 <code>engines/*</code> 一律</p>
+<p>  LEAVE（權責邊界＝路徑邊界）。</p>
+<p>- **教義對帳覆蓋**：每條教義條文要有對帳登記。引擎層正本隨 wheel</p>
+<p>  （canon＋矩陣）；專案層自持 <code>governance/doctrine-map.toml</code></p>
+<p>  （同一 schema）；盤點／審閱用 <code>project-os doctrine map</code>。</p>
+<p>  無登記＝缺口不是豁免；機器不可驗的條文標 `machine_checkable =</p>
+<p>  false`＋理由（豁免＝人審債，audit 尾段列豁免清冊）。</p></section><footer>公開版：機械清理內部立案編號／人名泛化（scrub 規則見 GovernanceDocs_Hub）；正本＝引擎車載 FAQ.md，以 <code>project-os docs FAQ.md</code> 為準。</footer></main></html>
