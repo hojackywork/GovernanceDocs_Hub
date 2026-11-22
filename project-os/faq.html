@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Project OS FAQ（公開版）</title><style>body{margin:0;background:#eef0f2;color:#202326;font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif}main{max-width:1080px;margin:32px auto;padding:0 18px}.page-nav{margin:1em 0;line-height:1.55}section{background:white;border:1px solid #d8dce0;border-radius:18px;margin:24px 0;padding:26px}h1{font-size:24px}h2{font-size:19px;border-top:1px solid #e1e4e8;padding-top:18px;margin-top:22px}h3{font-size:16px;margin:16px 0 4px}p{margin:6px 0}pre,code{font:13px/1.6 ui-monospace,SFMono-Regular,monospace;background:#f5f7fa;border-radius:6px}pre{padding:8px 10px;overflow-x:auto}code{padding:1px 5px}footer{font-size:13px;color:#666;margin:20px 0 30px}</style><main><p class="page-nav">Project OS FAQ（公開版；隨引擎同版）。 · <a href="plugin.html">→ Plugin 工具說明</a> · <a href="cli.html">→ CLI 工具說明</a></p><section><h1>Project OS 新手 FAQ（2026-09-25 初版）</h1>
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ProjectOS FAQ（公開版）</title><style>body{margin:0;background:#eef0f2;color:#202326;font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang TC",sans-serif}main{max-width:1080px;margin:32px auto;padding:0 18px}.page-nav{margin:1em 0;line-height:1.55}section{background:white;border:1px solid #d8dce0;border-radius:18px;margin:24px 0;padding:26px}h1{font-size:24px}h2{font-size:19px;border-top:1px solid #e1e4e8;padding-top:18px;margin-top:22px}h3{font-size:16px;margin:16px 0 4px}p{margin:6px 0}pre,code{font:13px/1.6 ui-monospace,SFMono-Regular,monospace;background:#f5f7fa;border-radius:6px}pre{padding:8px 10px;overflow-x:auto}code{padding:1px 5px}footer{font-size:13px;color:#666;margin:20px 0 30px}</style><main><p class="page-nav">ProjectOS FAQ（公開版；隨引擎同版）。 · <a href="plugin.html">→ Plugin 工具說明</a> · <a href="cli.html">→ CLI 工具說明</a></p><section><h1>ProjectOS 新手 FAQ（2026-09-25 初版）</h1>
 <p>&gt; 本檔是**常設文件**（跟著 repo 迭代），不是一次性產物——所以它落戶在</p>
 <p>&gt; <code>app/</code> 並經 <code>.project-os/config.toml</code> 的 <code>primary_whitelist</code> 申報合法。</p>
 <p>&gt; 這本身就是「如何為常設文件落戶」的示範：不申報的陌生檔案會被</p>
@@ -136,7 +136,7 @@
 <p>**會「搬動位置、不會刪內容」**。開發區（dev_zones）內的一切原封不動；</p>
 <p>區外的產物被歸位；規則認不得的進隔離（可救回）。拿不準就先</p>
 <p><code>reconcile --plan</code>（零寫入預覽）。</p>
-<h3>A5 Project OS 治理自己時有沒有「開外掛」的機制？</h3>
+<h3>A5 ProjectOS 治理自己時有沒有「開外掛」的機制？</h3>
 <p>**沒有，也不允許有**（owner 2026-11-05 裁：機制均等原則）。</p>
 <p>每個開發 repo 都是**自己產物的工廠**——產物按類型分發到各自的</p>
 <p>管道（web → VPS／Supabase／Vercel；Python 包 → pypiserver；node</p>
@@ -410,7 +410,7 @@
 <p>「每專案只綁一台 Desktop」管的是觸發器歸屬（誰有權設鬧鐘），不是</p>
 <p>reconcile 本身。觸發三層：watch（輪詢代跑）／host 定時任務（到點代跑）／</p>
 <p>手動 reconcile（最終保證）。</p>
-<h3>G4 外部 AI agent 要讀 Project OS 2 的治理知識，該讀哪裡？</h3>
+<h3>G4 外部 AI agent 要讀 ProjectOS 的治理知識，該讀哪裡？</h3>
 <p>**正式介面＝MCP／車載文件；過橋才釘 release tag；永勿直讀 main。**</p>
 <p>repo 的 main 是工廠開發中狀態（無版本釘子、隨時漂移），不是知識介面。</p>
 <p>正式介面（2026-10-12 裁決落地）：<code>project-os mcp</code>（read-only 工具閉集，</p>
