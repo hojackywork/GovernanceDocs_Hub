@@ -5,6 +5,14 @@
 <p>&gt; reconcile 搬走或隔離，申報了就是基礎設施。</p>
 <p>&gt; 答案體例：**一句話答案** → 解釋 → 命令。</p>
 <p>---</p>
+<h2>從哪開始</h2>
+<p>先說想解決的問題；沒有具體問題可說「用 project-os-guide 介紹全貌」。</p>
+<p>導覽不操作專案。要實際檢查時，給出專案路徑並說「檢查這個專案有沒有亂放」。</p>
+<p>前提：Host 可使用 Plugin；專案操作另需已部署的本機 project-os，引擎版本用 project-os --version 核對。</p>
+<p>ChatGPT 雲端不能啟本機 stdio，僅有 Skill 不代表可操作本機專案。</p>
+<p>預期看到本輪範圍、觀察、證據及未驗；成功是取得實際檢查結果，不代表已搬移或已驗收。</p>
+<p>安裝更新前讀同版 PLUGIN-RELEASE.md，先核分發來源及 Host 正常安裝通道；有包不等於已載入。</p>
+<p>需要留報告再明說「把本輪已做檢查留報告」；未授權時不因教學自動建立檔案。</p>
 <h2>H. 故障與誤操作（救命區，先看這裡）</h2>
 <h3>H1 跑指令出現「不是受管專案：找不到 .project-os/config.toml」？</h3>
 <p>**該目錄還沒啟用治理**（或 <code>--project</code> 路徑打錯）。</p>
@@ -29,7 +37,8 @@
 <p>project-os inbox enroll &lt;inbox 路徑&gt; --to &lt;新位置&gt; --by &lt;你&gt; --reason &lt;理由&gt; --project .</p>
 <p>project-os reconcile --project .                                     # 執行搬移</p>
 <pre>```</pre>
-<p>**enroll 只對「classifier 已知去處」的物品有效**：授權是為 classifier 的歸位意見蓋章，不是指定新去處。</p>
+<p>**enroll 只對「classifier 已知去處」的物品有效**（立案，</p>
+<p>2026-10-15 裁）：授權是為 classifier 的歸位意見蓋章，不是指定新去處。</p>
 <p>原路徑 classifier 認不得（unknown-collection）時，promote 決定**不可</p>
 <p>執行**——報告會標 <code>inbox.decision-inert</code>（決定留痕但不驅動搬移）。</p>
 <p>此類物品的合法出路只有兩條：① 申報集合／dev_zone 使原路徑變合法</p>
@@ -105,13 +114,14 @@
 <p>警告：symlink 是**有期限的支架**——拖越久，透過舊路徑新產生的綁定</p>
 <p>越多；有些工具會 canonicalize 路徑（真實新路徑寫入設定），無害，</p>
 <p>但拆橋前的掃描要認得新舊兩個名字。</p>
-<p>**與 Q5 的關係**：Q5 否決的是</p>
+<p>**與 Q5 的關係**（）：Q5 否決的是</p>
 <p>「永久 symlink 路標」當常設機制（drift 源）；本橋是**過渡設施**——</p>
 <p>遷完即拆，正是 Q5 認可的「登記後到期清理」變體，兩者不衝突。</p>
 <p>忘記建橋的補救：舊路徑 <code>ln -s</code> 指回新位置即可續命（2026-10-25</p>
 <p>ProjectOS_Dev 實戰驗證），仍須補跑本條第 3 步機械驗證。</p>
 <h3>H10 可以在專案內的內層 repo 再跑一次 `project-os init` 嗎？</h3>
-<p>**不可以——一專案一台引擎，治理不巢狀**。內層 repo（primary 裡自帶</p>
+<p>**不可以——一專案一台引擎，治理不巢狀**（owner 2026-10-30 裁；</p>
+<p>Q3）。內層 repo（primary 裡自帶</p>
 <p><code>.git</code> 的子目錄，如 <code>workspace/Layouts_Norm/</code>）是外層專案的工作</p>
 <p>產物，不是獨立治理對象；在裡面 init 會造出巢狀</p>
 <p><code>.project-os/config.toml</code>，兩台引擎對同一棵樹各自分類搬移，</p>
@@ -153,7 +163,7 @@
 <p>  承諾——不許結構性差異。任何機制若在 ProjectOS_Dev 有效、在其</p>
 <p>  他專案結構性失效（如教義鏈曾硬編碼它的檔案路徑），即為產品缺陷，</p>
 <p>  比照 drift 處理。</p>
-<h3>A7 每個專案都該有自己的教義嗎？怎麼建？</h3>
+<h3>A7 每個專案都該有自己的教義嗎？怎麼建？（，2026-11-12 裁）</h3>
 <p>**開發型底座（app／workspace）的專案：是，且 init 已自動建好**——</p>
 <p>教義＝專案自己的憲法（root 閉集、權威鏈等最高結構法則的正本），</p>
 <p><code>config.toml</code> 會有 <code>doctrine_path</code> 指向它。hub／norm 底座的 init</p>
@@ -162,11 +172,11 @@
 <p><code>project-os doctrine init</code>。非開發型底座（sop／research／campaign／</p>
 <p>course）不建。</p>
 <p>**怎麼改**：正文（修正案索引段以下）不可就地編輯——任何變更走</p>
-<p>修正案（實體包入 <code>inputs/requirements/_YYYYMMDD_主題/</code>＋索引登記</p>
+<p>修正案（實體包入 <code>同版需求來源（內部定位已裁剪）</code>＋索引登記</p>
 <p>典範 sha256），audit 的 DOCTRINE_INTEGRITY 會對帳，就地偷改會被</p>
 <p>finding 抓出。教義只管「永遠不能做的」；產品邊界（現階段做／不做</p>
 <p>什麼）是 MVP 宣告，住 <code>governance/</code>，兩者不同層。</p>
-<h3>A6 `--by` 的 canonical 署名是什麼？</h3>
+<h3>A6 `--by` 的 canonical 署名是什麼？（M-5，）</h3>
 <p>**每個 host 一個字串：<code>&lt;宿主產品名&gt; / &lt;模型&gt;</code>。** 同一 host 一字串，</p>
 <p>actor.multiple finding 才保有真警訊力（實彈：同一台機器 30 天內</p>
 <p>Claude 家族出現 5 種寫法，finding 從警訊退化成噪音）。</p>
@@ -239,13 +249,17 @@
 <p>在 Primary 根層視為**公認基礎設施**，不須申報——既有專案升級引擎後，</p>
 <p>新出現的車載文件不會再被首輪 reconcile 歸位（0.8.0 PLAYBOOK.md</p>
 <p>實彈修復）；<code>primary_whitelist</code> 申報降為額外豁免的補充手段</p>
-<p>。</p>
+<p>（Q1/Q2 已裁）。</p>
 <h3>C5 AGENTS.md 是什麼？我要寫什麼？</h3>
 <p>**給 AI 助手看的「家規」入口**（init 自動生成模板）。檢查你有沒有要補的：</p>
 <p>開發區清單、inbox 紀律、skill 產物放 <code>.artifacts/skills/</code> 等。已有不覆寫。</p>
 <h3>C6 一個專案可以有幾個 Primary？混合內容／多 app 怎麼放？</h3>
 <p>**恰好一個**。八型（<code>app</code>/<code>sop</code>/<code>research</code>/<code>campaign</code>/<code>course</code>/<code>workspace</code>/</p>
-<p><code>hub</code>/<code>norm</code>）是底座契約閉集，</p>
+<p><code>hub</code>/<code>norm</code>）是底座契約閉集（<code>hub</code>＝GitHub Hub Repo 家族</p>
+<p><code>*_Hub</code>：協議／規範正本集合，四區</p>
+<p><code>catalog</code>/<code>vendor</code>/<code>_sandbox</code>/<code>_archive</code>＋必要根層檔案；</p>
+<p><code>norm</code>＝規範正本家族 <code>*_Norm</code>：已定/草稿兩區＋判例表紀律；</p>
+<p>立第七型、覆議 repohub→hub＋norm），</p>
 <p><code>init</code> 擇一（config <code>primary =</code> 單值，</p>
 <p>load_policy 閉集驗證）；多 Primary 不立案。</p>
 <p>**型名宣告的是「底座契約」——這個 Primary 用哪套骨架＋開發區規則——</p>
@@ -257,7 +271,7 @@
 <p>- 多 app（monorepo）→ Primary 內部 <code>apps/</code> + <code>packages/</code>；repo 根就是</p>
 <p>  Primary，turbo / nx / pnpm workspaces 對 repo 根的要求在這裡全部滿足。</p>
 <p>- 一 Primary 可掛多 provider（<code>providers = [&quot;x&quot;, &quot;y&quot;]</code>，Slice 7a 已定案）。</p>
-<p>語義權威：<code>inputs/requirements/_20260917_primary-bases-and-provider-adapters/</code>。</p>
+<p>語義權威：<code>同版需求來源（內部定位已裁剪）</code>。</p>
 <h3>C7 root 的八項與收集器字典</h3>
 <p>**定義正本在此（各專案通用，不隨底座變）**——治理面收集器存在的</p>
 <p>意義就是存放開發中的一切；**primary 只放成品本身**。</p>
@@ -284,6 +298,8 @@
 <p>驗收基材）一律進收集器（<code>inputs/</code> 或 <code>outputs/</code> 日期包）；primary</p>
 <p>只放成品本身（含其組成部分，如 app 底座的測試、norm 底座記錄內的</p>
 <p>示範檔）。區分口訣：「**這是不是成品本身？**」是→primary；否→收集器。</p>
+<p>（已裁；實彈前科見</p>
+<p><code>doctrine-cases.md</code> 判例 1。）</p>
 <h3>C8 維護窗口（pause）是什麼？</h3>
 <p>**暫停 reconcile 的「執行面」**——期間 reconcile 照跑、照寫報告</p>
 <p>（觀測不停），但只報告不搬移；給「一段時間內整棵樹重組」（如分拆</p>
@@ -294,9 +310,9 @@
 <p>project-os resume --project &lt;路徑&gt;             # 提前結束</p>
 <pre>```</pre>
 <p>**只能由使用者親手執行**——agent 只能建議你暫停，不得自翻</p>
-<p>。窗口結束後的第一輪 reconcile</p>
+<p>（已裁）。窗口結束後的第一輪 reconcile</p>
 <p>會把這段時間累積的待整理項一次攤開——免費的整備前後對照。</p>
-<h3>C9 scope.absent 一直提醒——持續營運專案一定要建 scope.toml 嗎？</h3>
+<h3>C9 scope.absent 一直提醒——持續營運專案一定要建 scope.toml 嗎？（session級mvp 丙案，18:22 裁決）</h3>
 <p>不一定。<code>scope.absent</code> 是「缺產品 MVP 邊界宣告」的觀測提醒</p>
 <p>（drift 類、report-only）；若本專案為**持續營運**（無單一產品</p>
 <p>MVP，Session 級交代走 handoff 三件式），owner 可於</p>
@@ -346,7 +362,7 @@
 <p>（GitHub reusable workflow 機制，必須寄存在某 repo）。**不會全自動套用**——</p>
 <p>各倉要有一個 8 行呼叫檔，三個入口：<code>release init</code> 命令／建倉模板／手動貼。</p>
 <p>模板改進在中央，全倉自動生效（要同步的只有「存在」，不是「內容」）。</p>
-<h3>D5 `status --json` 是什麼？</h3>
+<h3>D5 `status --json` 是什麼？（）</h3>
 <p><code>project-os status --json</code> 把部署狀態總覽變成**機器可讀 JSON**</p>
 <p>（<code>schema_version</code>＋<code>tool</code>／<code>deployment</code>／<code>hosts</code>／<code>findings</code> 四組，</p>
 <p>欄位比照 macgov 的 <code>status --json</code>）。<code>findings</code> 是觀測訊號：</p>
@@ -434,7 +450,7 @@
 <p>| Kimi Desktop（chat） | <code>daimon-share/plugin-sources/personal/project-os/</code>（**插件包**，掃描式個人倉） | 插件頁「自定義插件」／<code>/plugin builder</code> |</p>
 <p>**kimi-desktop 勿直改 daimon <code>plugins/installed.json</code>**——chat 面板</p>
 <p>看不見、官方 CLI 拒重複 id（2026-10-14 實彈教訓）。</p>
-<p>**一鍵指令**：</p>
+<p>**一鍵指令（vNext 起可用；裁決 Q1–Q4 全按建議）**：</p>
 <p><code>project-os mcp install</code>（偵測到的 host 冪等接入；<code>--host &lt;id&gt;</code> 單台、</p>
 <p><code>--force</code> 覆寫衝突）／<code>project-os mcp list</code>（查看各 host 接入狀態）／</p>
 <p><code>project-os mcp uninstall</code>（移除本工具條目，foreign 拒動）。</p>
@@ -461,7 +477,8 @@
 <p>安裝／部署不進 MCP；MCP 僅提供 Read 與未生效草稿 Write，實際閉集</p>
 <p>以同版操作目錄為準。是否安裝由使用者決定，宿主不可代做的帳號操作</p>
 <p>仍交人完成。</p>
-<p>**部署精靈的寫入閘門**：<code>project-os deploy</code>／<code>undeploy</code> 寫入前會先印</p>
+<p>**部署精靈的寫入閘門**（切片 1；</p>
+<p>DEV-PTC1 3.0.0 §8）：<code>project-os deploy</code>／<code>undeploy</code> 寫入前會先印</p>
 <p>將執行的清單——互動環境問 [y/N]；**非互動（腳本／Agent）必須加</p>
 <p><code>--yes</code>**（過渡版未給只警告照跑、次版將拒動）。預覽用 <code>--plan</code></p>
 <p>（只列不寫）；選裝用 <code>--only &lt;host id&gt;</code>（可重複，只認各通道閉集）。</p>
@@ -530,7 +547,7 @@
 <p>  （finding 消失／commit 落地）對帳自查自關、零回執；機器不可驗者</p>
 <p>  一句話回執即可。機械維護與純通報不開票。</p>
 <p>- 詞表見 GLOSSARY「Handoff 層」；立案與裁決紀錄：ProjectOS_Dev</p>
-<p>  <code>inputs/requirements/_20261116_handoff標準化/</code>。</p>
+<p>  <code>同版需求來源（內部定位已裁剪）</code>。</p>
 <h3>G8 發版後要通報嗎？（2026-11-16，0.17.4 斷記實彈）</h3>
 <p>**要。發版＝需路由事件**——其他專案的 session 靠車版內容決定行為，</p>
 <p>版號不會自己長腳。</p>
@@ -550,4 +567,4 @@
 <p>  （canon＋矩陣）；專案層自持 <code>governance/doctrine-map.toml</code></p>
 <p>  （同一 schema）；盤點／審閱用 <code>project-os doctrine map</code>。</p>
 <p>  無登記＝缺口不是豁免；機器不可驗的條文標 `machine_checkable =</p>
-<p>  false`＋理由（豁免＝人審債，audit 尾段列豁免清冊）。</p></section><footer>公開版：機械清理內部立案編號／人名泛化（scrub 規則見 GovernanceDocs_Hub）；正本＝引擎車載 FAQ.md，以 <code>project-os docs FAQ.md</code> 為準。</footer></main></html>
+<p>  false`＋理由（豁免＝人審債，audit 尾段列豁免清冊）。</p></section><footer>來源版本 0.18.16；公開版：機械清理內部立案編號／人名泛化（scrub 規則見 GovernanceDocs_Hub）；正本＝引擎車載 FAQ.md，以 <code>project-os docs FAQ.md</code> 為準。</footer></main></html>
