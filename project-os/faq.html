@@ -159,7 +159,7 @@
 <p>  五問、每切片收尾跑 audit 這類「專案特化規則」，屬此層，允許存在。</p>
 <p>- **機制層＝三重靈魂通用**：「整理師」「防 Scope 爆炸」「防漂移」</p>
 <p>  的對帳機制（reconcile／audit／preflight／紅綠燈／教義鏈…）是</p>
-<p>  **所有受管專案通用的基本標準**，是 Project OS 對受管專案的服務</p>
+<p>  **所有受管專案通用的基本標準**，是 ProjectOS 對受管專案的服務</p>
 <p>  承諾——不許結構性差異。任何機制若在 ProjectOS_Dev 有效、在其</p>
 <p>  他專案結構性失效（如教義鏈曾硬編碼它的檔案路徑），即為產品缺陷，</p>
 <p>  比照 drift 處理。</p>
@@ -338,7 +338,7 @@
 <p>**「push tag 到 GitHub」才點火**，只打本地 tag 不會動。之後全自動：</p>
 <p>測試門禁（不過全停）→ 建 wheel → 傳 registry → 掛 GitHub Releases。</p>
 <p>（0.16.0 起只建 wheel 不再建 sdist——sdist 不收建置工序產物，</p>
-<p>wheel-from-sdist 會掉車載文件，實彈後比照 macgov 改 wheel-only。）</p>
+<p>wheel-from-sdist 會掉車載文件，實彈後比照 MacGov 改 wheel-only。）</p>
 <p>你永遠要親自決定的只有三件事：何時發、什麼版本號、tag 訊息寫什麼。</p>
 <h3>D2 成品放哪裡給人領？</h3>
 <p>**兩個通道同時發**：自架 pypiserver 的 <code>internal/</code> 組（主通道；CI 經</p>
@@ -365,7 +365,7 @@
 <h3>D5 `status --json` 是什麼？（）</h3>
 <p><code>project-os status --json</code> 把部署狀態總覽變成**機器可讀 JSON**</p>
 <p>（<code>schema_version</code>＋<code>tool</code>／<code>deployment</code>／<code>hosts</code>／<code>findings</code> 四組，</p>
-<p>欄位比照 macgov 的 <code>status --json</code>）。<code>findings</code> 是觀測訊號：</p>
+<p>欄位比照 MacGov 的 <code>status --json</code>）。<code>findings</code> 是觀測訊號：</p>
 <p><code>plugin.stale</code>（Host plugin 版號落後引擎）／<code>plugin.not_detected</code>／</p>
 <p><code>connector.duplicate</code>（獨立 mcpServers 與 plugin 內建 connector</p>
 <p>並存＝工具兩套）／<code>version.query_failed</code>——**只回報、不自動處置**</p>
@@ -429,7 +429,7 @@
 <h3>G4 外部 AI agent 要讀 ProjectOS 的治理知識，該讀哪裡？</h3>
 <p>**正式介面＝MCP／車載文件；過橋才釘 release tag；永勿直讀 main。**</p>
 <p>repo 的 main 是工廠開發中狀態（無版本釘子、隨時漂移），不是知識介面。</p>
-<p>正式介面（2026-10-12 裁決落地）：<code>project-os mcp</code>（read-only 工具閉集，</p>
+<p>正式介面（2026-10-12 裁決落地）：<code>project-os mcp</code>（19 Read／8 Draft Write 工具閉集，</p>
 <p>含 <code>docs</code> tool）與 <code>project-os docs</code>（FAQ／GLOSSARY／AGENTS 模板隨 wheel</p>
 <p>發行，有版本釘子）——安裝版升級後即隨車可用。升級前的人為過橋：</p>
 <p>釘 release tag 讀（如 <code>…/v0.3.0/FAQ.md</code>，版本號隨當前 release）。</p>
@@ -567,4 +567,4 @@
 <p>  （canon＋矩陣）；專案層自持 <code>governance/doctrine-map.toml</code></p>
 <p>  （同一 schema）；盤點／審閱用 <code>project-os doctrine map</code>。</p>
 <p>  無登記＝缺口不是豁免；機器不可驗的條文標 `machine_checkable =</p>
-<p>  false`＋理由（豁免＝人審債，audit 尾段列豁免清冊）。</p></section><footer>來源版本 0.18.17；公開版：機械清理內部立案編號／人名泛化（scrub 規則見 GovernanceDocs_Hub）；正本＝引擎車載 FAQ.md，以 <code>project-os docs FAQ.md</code> 為準。</footer></main></html>
+<p>  false`＋理由（豁免＝人審債，audit 尾段列豁免清冊）。</p></section><footer>來源版本 0.18.18；公開版：機械清理內部立案編號／人名泛化（scrub 規則見 GovernanceDocs_Hub）；正本＝引擎車載 FAQ.md，以 <code>project-os docs FAQ.md</code> 為準。</footer></main></html>
